@@ -2,7 +2,7 @@
  * 会话管理数据访问层
  */
 
-import { eq, and, lt } from 'drizzle-orm';
+import { eq, and, lt, sql } from 'drizzle-orm';
 import { BaseRepository } from '../base-repository';
 import { sessions, users, type Session, type User } from '../../database/schema';
 import { ResourceNotFoundError } from '../../utils/errors';
@@ -60,7 +60,7 @@ export class SessionRepository extends BaseRepository {
         and(
           eq(sessions.tokenHash, tokenHash),
           // 检查是否过期
-          this.db.sql`${sessions.expiresAt} > ${now}`
+          sql`${sessions.expiresAt} > ${now}`
         )
       )
       .limit(1);

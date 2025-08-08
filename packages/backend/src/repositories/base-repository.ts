@@ -4,7 +4,7 @@
  */
 
 import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-import * as schema from '../../database/schema';
+import * as schema from '../database/schema';
 
 export abstract class BaseRepository {
   constructor(protected db: BetterSQLite3Database<typeof schema>) {}

@@ -3,7 +3,7 @@
  */
 
 import type { RouteConfig, AddRouteConfigRequest, EditRouteConfigRequest } from '../../../../../shared/types/admin/routes'
-import { RouteConfigRepository } from '../../repositories/route-config-repository'
+import { RouteConfigRepository } from '../../repositories/provider/route-config-repository'
 
 export class RouteConfigService {
   private repository: RouteConfigRepository

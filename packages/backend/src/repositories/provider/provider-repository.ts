@@ -2,8 +2,8 @@
  * 供应商数据访问层
  */
 
-import { ModelProvider } from '../../../../shared/types/admin/providers'
-import { ADMIN_STORAGE_KEYS } from '../../../../shared/constants/admin/storage'
+import { ModelProvider } from '../../../../../shared/types/admin/providers'
+import { ADMIN_STORAGE_KEYS } from '../../../../../shared/constants/admin/storage'
 
 export class ProviderRepository {
   constructor(private adminKv: KVNamespace) {}

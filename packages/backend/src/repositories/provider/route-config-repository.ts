@@ -2,8 +2,8 @@
  * 路由配置数据访问层
  */
 
-import type { RouteConfig } from '../../../../shared/types/admin/routes'
-import type { SelectedConfig } from '../services/proxy/engines/types'
+import type { RouteConfig } from '../../../../../shared/types/admin/routes'
+import type { SelectedConfig } from '../../services/proxy/engines/types'
 
 export class RouteConfigRepository {
   private readonly ROUTE_CONFIGS_KEY = 'admin_route_configs'

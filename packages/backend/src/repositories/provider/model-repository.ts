@@ -2,8 +2,8 @@
  * 模型数据访问层
  */
 
-import { SelectedModel } from '../../../../shared/types/admin/models'
-import { ADMIN_STORAGE_KEYS } from '../../../../shared/constants/admin/storage'
+import { SelectedModel } from '../../../../../shared/types/admin/models'
+import { ADMIN_STORAGE_KEYS } from '../../../../../shared/constants/admin/storage'
 
 export class ModelRepository {
   constructor(private adminKv: KVNamespace) {}

@@ -2,7 +2,7 @@
  * 用户数据访问层
  */
 
-import { eq, or } from 'drizzle-orm';
+import { eq, or, sql } from 'drizzle-orm';
 import { BaseRepository } from '../base-repository';
 import { users, type User, type NewUser } from '../../database/schema';
 import { AppError, ValidationError, ResourceNotFoundError } from '../../utils/errors';
@@ -93,7 +93,7 @@ export class UserRepository extends BaseRepository {
       .update(users)
       .set({ 
         lastLoginAt: new Date().toISOString(),
-        loginCount: this.db.sql`${users.loginCount} + 1`
+        loginCount: sql`${users.loginCount} + 1`
       })
       .where(eq(users.id, id))
       .run();
