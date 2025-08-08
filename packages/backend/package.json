@@ -13,19 +13,29 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:ui": "vitest --ui",
-        "test:log": "mkdir -p test-logs && vitest run 2>&1 | tee test-logs/all-tests-$(date +%Y%m%d-%H%M%S).log"
+        "test:log": "mkdir -p test-logs && vitest run 2>&1 | tee test-logs/all-tests-$(date +%Y%m%d-%H%M%S).log",
+        "db:push": "drizzle-kit push",
+        "db:studio": "drizzle-kit studio",
+        "db:seed": "bun run src/database/seed.ts",
+        "db:init": "npm run db:push && npm run db:seed"
     },
     "dependencies": {
         "@anthropic-ai/sdk": "^0.57.0",
         "@google/genai": "^1.12.0",
+        "@types/bcrypt": "^6.0.0",
+        "bcrypt": "^6.0.0",
         "hono": "^4.0.0",
         "openai": "^5.11.0"
     },
     "devDependencies": {
         "@cloudflare/workers-types": "^4.20240512.0",
+        "@types/better-sqlite3": "^7.6.13",
         "@types/node": "^20.19.9",
         "@vitest/ui": "^3.2.4",
+        "better-sqlite3": "^12.2.0",
         "bun-types": "^1.2.19",
+        "drizzle-kit": "^0.31.4",
+        "drizzle-orm": "^0.44.4",
         "miniflare": "^4.20250712.2",
         "typescript": "^5.0.0",
         "vitest": "^3.2.4"

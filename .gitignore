@@ -46,6 +46,14 @@ packages/frontend/wrangler.toml
 .kv-storage-test/
 .test-kv-*/
 
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
 # Testing
 coverage/
 .nyc_output/
