@@ -26,6 +26,12 @@ import { ref } from 'vue'
 import { useProviders } from '~/composables/useProviders'
 import { useRouteConfigs } from '~/composables/useRouteConfigs'
 import type { AddRouteConfigRequest } from '../../../../shared/types/admin/routes'
+
+// 添加认证中间件
+definePageMeta({
+  middleware: 'auth'
+})
+
 const { providers, fetchProviders } = useProviders()
 const { addRouteConfig } = useRouteConfigs()
 
@@ -52,6 +58,6 @@ const handleSubmit = async (data: AddRouteConfigRequest) => {
 
 const navigateBack = () => {
   // 导航回仪表板的路由配置标签页
-  return navigateTo('/admin/dashboard?tab=routes')
+  return navigateTo('/admin?tab=routes')
 }
 </script>

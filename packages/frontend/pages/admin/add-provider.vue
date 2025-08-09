@@ -11,7 +11,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex items-center space-x-4">
-            <NuxtLink to="/admin/dashboard?tab=providers" 
+            <NuxtLink to="/admin?tab=providers" 
                      class="flex items-center space-x-2 text-orange-600 hover:text-orange-700 px-3 py-2 rounded-xl hover:bg-white/50 transition duration-200">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -62,6 +62,11 @@ import type { AddProviderRequest, EditProviderRequest } from '../../../../shared
 import { API_ENDPOINTS } from '../../../../shared/constants/endpoints'
 import ProviderForm from '~/components/ProviderForm.vue'
 
+// 添加认证中间件
+definePageMeta({
+  middleware: 'auth'
+})
+
 useHead({
   title: '添加模型供应商 - Claude Code 管理中心',
   meta: [
@@ -75,13 +80,6 @@ const router = useRouter()
 const loading = ref(false)
 const { showNotification, withErrorHandling } = useErrorHandler()
 
-// 检查认证状态
-onMounted(() => {
-  if (sessionStorage.getItem('admin_authenticated') !== 'true') {
-    router.push('/admin')
-    return
-  }
-})
 
 const handleSubmit = async (data: AddProviderRequest | EditProviderRequest) => {
   // 添加供应商页面只会收到 AddProviderRequest
@@ -103,7 +101,7 @@ const handleSubmit = async (data: AddProviderRequest | EditProviderRequest) => {
       if (response.success) {
         showNotification('模型供应商添加成功！', 'success')
         setTimeout(() => {
-          router.push('/admin/dashboard?tab=providers')
+          router.push('/admin?tab=providers')
         }, 1500)
         return response
       }
@@ -115,12 +113,7 @@ const handleSubmit = async (data: AddProviderRequest | EditProviderRequest) => {
 }
 
 const handleCancel = () => {
-  router.push('/admin/dashboard?tab=providers')
+  router.push('/admin?tab=providers')
 }
 
-const logout = async () => {
-  sessionStorage.removeItem('admin_authenticated')
-  sessionStorage.removeItem('admin_username')
-  await router.push('/admin')
-}
 </script>

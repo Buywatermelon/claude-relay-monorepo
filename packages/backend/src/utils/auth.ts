@@ -2,11 +2,11 @@
  * 认证相关的工具函数
  */
 
-import bcrypt from 'bcrypt';
+import { Argon2id } from 'oslo/password';
 import crypto from 'crypto';
 
-// 密码加密的盐轮数
-const SALT_ROUNDS = 10;
+// 创建 Argon2id 实例
+const argon2id = new Argon2id();
 
 /**
  * 生成唯一 ID
@@ -30,21 +30,20 @@ export function generateUUID(): string {
 /**
  * 哈希密码
  * @param password - 明文密码
- * @param rounds - 盐轮数，默认为 10
  * @returns 加密后的密码哈希
  */
-export async function hashPassword(password: string, rounds: number = SALT_ROUNDS): Promise<string> {
-  return bcrypt.hash(password, rounds);
+export async function hashPassword(password: string): Promise<string> {
+  return argon2id.hash(password);
 }
 
 /**
  * 验证密码
- * @param password - 明文密码
  * @param hash - 密码哈希
+ * @param password - 明文密码
  * @returns 密码是否匹配
  */
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
+export async function verifyPassword(hash: string, password: string): Promise<boolean> {
+  return argon2id.verify(hash, password);
 }
 
 /**

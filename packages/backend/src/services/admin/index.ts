@@ -5,7 +5,6 @@
  * 不包含任何业务逻辑
  */
 
-export { AdminAuthService } from './auth'
 export { DashboardService } from './dashboard'
 export { ProviderService } from './providers'
 export { ModelService } from './models'

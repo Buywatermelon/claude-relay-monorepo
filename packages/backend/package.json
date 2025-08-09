@@ -26,7 +26,6 @@
         "@google/genai": "^1.12.0",
         "@hono/zod-validator": "^0.7.2",
         "@lucia-auth/adapter-drizzle": "^1.1.0",
-        "@node-rs/argon2": "^1.7.0",
         "hono": "^4.0.0",
         "lucia": "^3.2.2",
         "openai": "^5.11.0",
@@ -35,9 +34,7 @@
     },
     "devDependencies": {
         "@cloudflare/workers-types": "^4.20240512.0",
-        "@types/better-sqlite3": "^7.6.13",
         "@vitest/ui": "^3.2.4",
-        "better-sqlite3": "^12.2.0",
         "bun-types": "^1.2.19",
         "drizzle-kit": "^0.31.4",
         "drizzle-orm": "^0.44.4",

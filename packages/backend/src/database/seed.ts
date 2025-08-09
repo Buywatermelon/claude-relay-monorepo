@@ -6,7 +6,8 @@
 import { getDatabase } from './init';
 import { users, roles, permissions, rolePermissions, userRoles } from './schema';
 import { eq } from 'drizzle-orm';
-import { generateId, hashPassword } from '../utils/auth';
+import { generateId } from '../utils/auth';
+import { hashPassword } from '../auth/password';
 
 // ============================================
 // 配置常量

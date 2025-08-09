@@ -108,24 +108,33 @@ authRoutes.post('/logout',
 
 // 验证会话
 authRoutes.get('/session',
-  validator('header', (headers) => {
-    const cookie = headers['cookie'] ?? '';
+  async (c) => {
+    // 从 cookie 中读取会话 ID
+    const cookie = c.req.header('cookie') ?? '';
     const sessionId = lucia.readSessionCookie(cookie);
     
+    // 如果没有会话 ID，返回未认证状态（不是错误）
     if (!sessionId) {
-      throw new Error('未找到会话');
+      return c.json({
+        user: null,
+        session: null,
+        authenticated: false
+      });
     }
     
-    return { sessionId };
-  }),
-  async (c) => {
-    const { sessionId } = c.req.valid('header');
+    // 验证会话
     const result = await authService.validateSession(sessionId);
 
+    // 如果会话无效或已过期，返回未认证状态（不是错误）
     if (!result.user || !result.session) {
-      throw new Error('会话无效或已过期');
+      return c.json({
+        user: null,
+        session: null,
+        authenticated: false
+      });
     }
 
+    // 返回认证用户信息
     return c.json({
       user: {
         id: result.user.id,
@@ -137,7 +146,8 @@ authRoutes.get('/session',
       session: {
         id: result.session.id,
         expiresAt: result.session.expiresAt
-      }
+      },
+      authenticated: true
     });
   }
 );

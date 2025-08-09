@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Relay - 认证系统原型</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .slide-up {
+            animation: slideUp 0.5s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .glow {
+            box-shadow: 0 0 20px rgba(251, 146, 60, 0.1);
+        }
+        .gradient-border {
+            background: linear-gradient(to right, #fb923c, #fbbf24);
+            padding: 1px;
+        }
+        input:focus {
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-orange-50 via-white to-amber-50 min-h-screen">
+    <!-- 优化的背景装饰 -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-orange-200 to-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+        <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-orange-200 to-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-amber-100 to-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+    </div>
+
+    <!-- 开发调试导航 - 生产环境应移除 -->
+    <div class="fixed top-4 right-4 z-50">
+        <div class="inline-flex bg-white/80 backdrop-blur-sm rounded-full shadow-lg p-1">
+            <button onclick="showPage('login')" id="nav-login" class="px-4 py-1.5 text-xs font-medium rounded-full transition duration-200 bg-orange-500 text-white">
+                登录
+            </button>
+            <button onclick="showPage('register')" id="nav-register" class="px-4 py-1.5 text-xs font-medium rounded-full transition duration-200 text-gray-600 hover:text-orange-600 hover:bg-white/50">
+                注册
+            </button>
+            <button onclick="showPage('profile')" id="nav-profile" class="px-4 py-1.5 text-xs font-medium rounded-full transition duration-200 text-gray-600 hover:text-orange-600 hover:bg-white/50">
+                个人
+            </button>
+        </div>
+    </div>
+
+    <!-- 登录页面 -->
+    <div id="login-page" class="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <!-- 单个居中卡片 -->
+        <div class="w-full max-w-md">
+            <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden fade-in">
+                <div class="p-8">
+                    <!-- Logo 和标题 -->
+                    <div class="text-center mb-6">
+                        <div class="inline-flex h-12 w-12 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl items-center justify-center mb-4 shadow-lg">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-semibold text-gray-900">
+                            欢迎回来
+                        </h2>
+                    </div>
+
+                <!-- 登录表单 -->
+                <form class="space-y-5">
+                    <div class="space-y-5">
+                        <div class="group">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-orange-600 transition-colors">用户名或邮箱</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                </div>
+                                <input type="text" class="block w-full pl-12 pr-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent focus:bg-white transition-all duration-200 hover:border-gray-300" placeholder="admin 或 admin@example.com">
+                            </div>
+                        </div>
+                        <div class="group">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-orange-600 transition-colors">密码</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                    </svg>
+                                </div>
+                                <input type="password" class="block w-full pl-12 pr-12 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent focus:bg-white transition-all duration-200 hover:border-gray-300" placeholder="输入您的密码">
+                                <button type="button" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                            <label class="ml-2 block text-sm text-gray-700">
+                                记住我（30天）
+                            </label>
+                        </div>
+                        <a href="#" class="text-sm text-orange-600 hover:text-orange-500">
+                            忘记密码？
+                        </a>
+                    </div>
+
+                    <button type="submit" class="w-full flex justify-center py-4 px-6 border border-transparent text-base font-semibold rounded-2xl text-white bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:via-amber-600 hover:to-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-xl hover:shadow-2xl">
+                        <span class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                            </svg>
+                            安全登录
+                        </span>
+                    </button>
+
+                    <!-- OAuth 分隔线 -->
+                    <div class="relative my-8">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-200"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-4 bg-white rounded-full text-gray-500 font-medium">或使用第三方登录</span>
+                        </div>
+                    </div>
+
+                    <!-- OAuth 登录按钮 -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <button type="button" class="group flex items-center justify-center px-4 py-3 border border-gray-200 rounded-2xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
+                            <svg class="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                                <path fill="currentColor" d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                            GitHub
+                        </button>
+                        <button type="button" class="group flex items-center justify-center px-4 py-3 border border-gray-200 rounded-2xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
+                            <svg class="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                            Google
+                        </button>
+                    </div>
+
+                    <div class="text-center pt-4">
+                        <span class="text-gray-600 text-sm">还没有账号？</span>
+                        <a href="#" onclick="showPage('register')" class="text-orange-600 hover:text-orange-700 font-semibold text-sm ml-1 transition-colors">立即注册</a>
+                    </div>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 注册页面 -->
+    <div id="register-page" class="relative z-10 min-h-screen flex items-center justify-center p-4 hidden">
+        <!-- 单个居中卡片 -->
+        <div class="w-full max-w-md">
+            <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden fade-in">
+                <div class="p-8">
+                    <!-- Logo 和标题 -->
+                    <div class="text-center mb-6">
+                        <div class="inline-flex h-12 w-12 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl items-center justify-center mb-4 shadow-lg">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-semibold text-gray-900">
+                            创建新账号
+                        </h2>
+                    </div>
+
+                <!-- 注册表单 -->
+                <form class="space-y-4">
+                    <div class="space-y-4">
+                        <div class="group">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-orange-600 transition-colors">用户名</label>
+                            <div class="relative">
+                                <input type="text" id="register-username" onblur="checkUsername()" class="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent focus:bg-white transition-all duration-200 hover:border-gray-300" placeholder="选择一个独特的用户名">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <span id="username-icon" class="hidden">
+                                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                            <p id="username-feedback" class="mt-2 text-sm hidden"></p>
+                        </div>
+                        <div class="group">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-orange-600 transition-colors">邮箱地址</label>
+                            <div class="relative">
+                                <input type="email" id="register-email" onblur="checkEmail()" class="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent focus:bg-white transition-all duration-200 hover:border-gray-300" placeholder="your@email.com">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <span id="email-icon" class="hidden">
+                                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                            <p id="email-feedback" class="mt-2 text-sm hidden"></p>
+                        </div>
+                        <div class="group">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-orange-600 transition-colors">密码</label>
+                            <input type="password" id="register-password" oninput="checkPasswordStrength()" class="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent focus:bg-white transition-all duration-200 hover:border-gray-300" placeholder="至少8个字符，包含大小写及数字">
+                            <div class="mt-3">
+                                <div class="flex justify-between mb-1.5">
+                                    <span class="text-xs font-medium text-gray-600">密码强度</span>
+                                    <span id="strength-text" class="text-xs font-medium text-gray-600">-</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                    <div id="strength-bar" class="h-2.5 rounded-full transition-all duration-500 bg-gradient-to-r from-red-500 to-red-600" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="group">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-orange-600 transition-colors">确认密码</label>
+                            <div class="relative">
+                                <input type="password" id="confirm-password" oninput="checkPasswordMatch()" class="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent focus:bg-white transition-all duration-200 hover:border-gray-300" placeholder="再次输入密码">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <span id="match-icon" class="hidden">
+                                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                            <p id="password-match-feedback" class="mt-2 text-sm hidden"></p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start">
+                        <input type="checkbox" class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded mt-0.5">
+                        <label class="ml-3 text-sm text-gray-600 leading-relaxed">
+                            我已阅读并同意 <a href="#" class="text-orange-600 hover:text-orange-700 font-medium underline decoration-dotted underline-offset-2">服务条款</a> 及 <a href="#" class="text-orange-600 hover:text-orange-700 font-medium underline decoration-dotted underline-offset-2">隐私政策</a>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="w-full flex justify-center py-4 px-6 border border-transparent text-base font-semibold rounded-2xl text-white bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:via-amber-600 hover:to-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-xl hover:shadow-2xl">
+                        <span class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            创建账号
+                        </span>
+                    </button>
+
+                    <div class="text-center pt-4">
+                        <span class="text-gray-600 text-sm">已有账号？</span>
+                        <a href="#" onclick="showPage('login')" class="text-orange-600 hover:text-orange-700 font-semibold text-sm ml-1 transition-colors">立即登录</a>
+                    </div>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 个人中心页面 -->
+    <div id="profile-page" class="relative z-10 min-h-screen hidden">
+        <!-- 现代化顶部导航 -->
+        <nav class="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center space-x-3">
+                        <div class="h-9 w-9 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center shadow-md">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <h1 class="text-lg font-semibold text-gray-900">
+                            Claude Relay
+                        </h1>
+                    </div>
+                    
+                    <!-- 用户下拉菜单 -->
+                    <div class="flex items-center">
+                        <div class="relative">
+                            <button onclick="toggleUserMenu()" class="flex items-center space-x-3 px-3 py-2 rounded-xl hover:bg-gray-50 transition-all duration-200">
+                                <div class="h-8 w-8 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center">
+                                    <span class="text-white text-sm font-medium">A</span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-700">admin</span>
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            
+                            <!-- 下拉菜单 -->
+                            <div id="user-menu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                                <div class="px-4 py-3 border-b border-gray-100">
+                                    <p class="text-sm font-medium text-gray-900">admin</p>
+                                    <p class="text-xs text-gray-500">admin@example.com</p>
+                                </div>
+                                <a href="#" onclick="event.preventDefault()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                        <span>个人中心</span>
+                                    </div>
+                                </a>
+                                <a href="/admin/dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                        </svg>
+                                        <span>管理中心</span>
+                                    </div>
+                                </a>
+                                <button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                        </svg>
+                                        <span>退出登录</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 个人信息内容 -->
+        <div class="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <!-- 个人资料卡片 -->
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden fade-in">
+                <!-- 头部背景 -->
+                <div class="h-32 relative overflow-hidden bg-gradient-to-br from-orange-400 via-orange-500 to-amber-600">
+                    <!-- 装饰性图案 -->
+                    <svg class="absolute inset-0 w-full h-full opacity-10" viewBox="0 0 400 100" preserveAspectRatio="none">
+                        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <circle cx="20" cy="20" r="1" fill="white"/>
+                        </pattern>
+                        <rect width="100%" height="100%" fill="url(#grid)"/>
+                    </svg>
+                    <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white/20 to-transparent"></div>
+                </div>
+                
+                <!-- 用户信息 -->
+                <div class="relative px-8 pb-8">
+                    <div class="flex items-end space-x-5 -mt-14 mb-8">
+                        <div class="h-28 w-28 bg-white rounded-2xl shadow-xl p-1">
+                            <div class="h-full w-full bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center">
+                                <span class="text-white text-4xl font-bold">A</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 pb-3">
+                            <h2 class="text-2xl font-bold text-gray-900">Admin User</h2>
+                            <p class="text-gray-500 text-sm mt-1">系统管理员</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 信息网格 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- 账户信息 -->
+                        <div>
+                            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">账户信息</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-gray-700">用户名</span>
+                                    <span class="text-sm text-gray-900">admin</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-gray-700">邮箱</span>
+                                    <span class="text-sm text-gray-900">admin@example.com</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-gray-700">注册时间</span>
+                                    <span class="text-sm text-gray-900">2024年1月15日</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 安全设置 -->
+                        <div>
+                            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">安全设置</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                        </svg>
+                                        <span class="text-sm font-medium text-gray-700">密码</span>
+                                    </div>
+                                    <button class="text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors">修改</button>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                        </svg>
+                                        <span class="text-sm font-medium text-gray-700">当前会话</span>
+                                    </div>
+                                    <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">活跃</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- OAuth 关联 -->
+                    <div class="mt-8">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">第三方账号</h3>
+                        <div class="flex flex-wrap gap-3">
+                            <button class="flex items-center space-x-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group">
+                                <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-900" viewBox="0 0 24 24">
+                                    <path fill="currentColor" d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                </svg>
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">关联 GitHub</span>
+                            </button>
+                            <div class="flex items-center space-x-2 px-4 py-2 bg-blue-50 rounded-xl">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                </svg>
+                                <span class="text-sm font-medium text-gray-700">user@gmail.com</span>
+                                <button class="text-xs text-red-600 hover:text-red-700 ml-2">断开</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面切换
+        function showPage(page) {
+            // 隐藏所有页面
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('register-page').classList.add('hidden');
+            document.getElementById('profile-page').classList.add('hidden');
+            
+            // 重置导航按钮样式
+            document.querySelectorAll('[id^="nav-"]').forEach(btn => {
+                btn.className = 'px-4 py-1.5 text-xs font-medium rounded-full transition duration-200 text-gray-600 hover:text-orange-600 hover:bg-white/50';
+            });
+            
+            // 显示选中的页面
+            document.getElementById(page + '-page').classList.remove('hidden');
+            document.getElementById('nav-' + page).className = 'px-4 py-1.5 text-xs font-medium rounded-full transition duration-200 bg-orange-500 text-white';
+        }
+
+        // 异步验证用户名
+        function checkUsername() {
+            const username = document.getElementById('register-username').value;
+            const feedback = document.getElementById('username-feedback');
+            const icon = document.getElementById('username-icon');
+            
+            if (username.length < 3) {
+                feedback.textContent = '用户名至少需要3个字符';
+                feedback.className = 'mt-2 text-sm text-red-600 slide-up';
+                feedback.classList.remove('hidden');
+                icon.classList.add('hidden');
+                return;
+            }
+            
+            // 模拟异步检查
+            feedback.textContent = '正在检查...';
+            feedback.className = 'mt-2 text-sm text-gray-500 slide-up';
+            feedback.classList.remove('hidden');
+            
+            setTimeout(() => {
+                if (username === 'admin') {
+                    feedback.textContent = '该用户名已被使用';
+                    feedback.className = 'mt-2 text-sm text-red-600 slide-up';
+                    icon.classList.add('hidden');
+                } else {
+                    feedback.textContent = '✓ 用户名可用';
+                    feedback.className = 'mt-2 text-sm text-green-600 slide-up';
+                    icon.classList.remove('hidden');
+                }
+                feedback.classList.remove('hidden');
+            }, 500);
+        }
+
+        // 异步验证邮箱
+        function checkEmail() {
+            const email = document.getElementById('register-email').value;
+            const feedback = document.getElementById('email-feedback');
+            const icon = document.getElementById('email-icon');
+            
+            if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                feedback.textContent = '请输入有效的邮箱地址';
+                feedback.className = 'mt-2 text-sm text-red-600 slide-up';
+                feedback.classList.remove('hidden');
+                icon.classList.add('hidden');
+                return;
+            }
+            
+            // 模拟异步检查
+            feedback.textContent = '正在验证...';
+            feedback.className = 'mt-2 text-sm text-gray-500 slide-up';
+            feedback.classList.remove('hidden');
+            
+            setTimeout(() => {
+                if (email === 'admin@example.com') {
+                    feedback.textContent = '该邮箱已被注册';
+                    feedback.className = 'mt-2 text-sm text-red-600 slide-up';
+                    icon.classList.add('hidden');
+                } else {
+                    feedback.textContent = '✓ 邮箱可用';
+                    feedback.className = 'mt-2 text-sm text-green-600 slide-up';
+                    icon.classList.remove('hidden');
+                }
+                feedback.classList.remove('hidden');
+            }, 500);
+        }
+
+        // 检查密码强度
+        function checkPasswordStrength() {
+            const password = document.getElementById('register-password').value;
+            const strengthBar = document.getElementById('strength-bar');
+            const strengthText = document.getElementById('strength-text');
+            
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+            if (password.match(/[0-9]/)) strength++;
+            if (password.match(/[^a-zA-Z0-9]/)) strength++;
+            
+            const widths = ['0%', '25%', '50%', '75%', '100%'];
+            const gradients = [
+                '',
+                'from-red-500 to-red-600',
+                'from-orange-500 to-orange-600', 
+                'from-yellow-500 to-yellow-600',
+                'from-green-500 to-green-600'
+            ];
+            const texts = ['-', '弱', '一般', '中等', '强'];
+            const textColors = ['text-gray-600', 'text-red-600', 'text-orange-600', 'text-yellow-600', 'text-green-600'];
+            
+            strengthBar.style.width = widths[strength];
+            strengthBar.className = 'h-2.5 rounded-full transition-all duration-500 bg-gradient-to-r ' + gradients[strength];
+            strengthText.textContent = texts[strength];
+            strengthText.className = 'text-xs font-medium ' + textColors[strength];
+        }
+
+        // 检查密码匹配
+        function checkPasswordMatch() {
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const feedback = document.getElementById('password-match-feedback');
+            const icon = document.getElementById('match-icon');
+            
+            if (confirmPassword === '') {
+                feedback.classList.add('hidden');
+                icon.classList.add('hidden');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                feedback.textContent = '两次输入的密码不一致';
+                feedback.className = 'mt-2 text-sm text-red-600 slide-up';
+                icon.classList.add('hidden');
+            } else {
+                feedback.textContent = '✓ 密码匹配';
+                feedback.className = 'mt-2 text-sm text-green-600 slide-up';
+                icon.classList.remove('hidden');
+            }
+            feedback.classList.remove('hidden');
+        }
+
+        // 处理登出
+        function handleLogout() {
+            if (confirm('确定要退出登录吗？')) {
+                alert('已退出登录');
+                showPage('login');
+            }
+        }
+        
+        // 切换用户菜单
+        function toggleUserMenu() {
+            const menu = document.getElementById('user-menu');
+            menu.classList.toggle('hidden');
+            
+            // 点击外部关闭菜单
+            if (!menu.classList.contains('hidden')) {
+                setTimeout(() => {
+                    document.addEventListener('click', function closeMenu(e) {
+                        if (!e.target.closest('#user-menu') && !e.target.closest('button[onclick="toggleUserMenu()"]')) {
+                            menu.classList.add('hidden');
+                            document.removeEventListener('click', closeMenu);
+                        }
+                    });
+                }, 100);
+            }
+        }
+    </script>
+</body>
+</html>

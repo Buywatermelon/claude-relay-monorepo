@@ -20,12 +20,24 @@ initDatabase()
 // KV namespace 验证中间件
 app.use('*', kvValidator())
 
-// CORS 配置 - 统一处理所有请求包括 OPTIONS 预检
+// CORS 配置 - 支持凭证的请求
 app.use('*', cors({
-  origin: '*',
+  origin: (origin) => {
+    // 开发环境允许 localhost:3000
+    if (!origin || origin.includes('localhost:3000') || origin.includes('127.0.0.1:3000')) {
+      return origin || 'http://localhost:3000'
+    }
+    // 生产环境允许所有 workers.dev 域名
+    if (origin.includes('.workers.dev')) {
+      return origin
+    }
+    // 其他情况返回请求的 origin
+    return origin
+  },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'anthropic-version', 'anthropic-beta'],
-  credentials: true  // 启用 cookies
+  allowHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'anthropic-version', 'anthropic-beta', 'Cookie'],
+  credentials: true,
+  exposeHeaders: ['Set-Cookie']
 }))
 
 // ==================== 基础路由 ====================

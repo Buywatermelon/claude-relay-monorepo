@@ -61,7 +61,6 @@ export default defineNuxtConfig({
       routes: [
         '/',
         '/admin',
-        '/admin/dashboard',
         '/admin/add-provider',
         '/admin/add-route-config'
         // 注意：/admin/key-pool/[providerId] 是动态路由，无法预渲染

@@ -14,8 +14,6 @@ const localFetch = async (request: Request) => {
   // 创建与 Cloudflare Workers 兼容的环境对象
   const env = {
     NODE_ENV: 'development',
-    ADMIN_USERNAME: process.env.ADMIN_USERNAME || 'admin',
-    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'password123',
     CLAUDE_RELAY_ADMIN_KV: kvStorage
   }
   
@@ -33,7 +31,7 @@ const localFetch = async (request: Request) => {
 const port = process.env.PORT || 8787
 console.log(`🚀 Claude Relay 后端 (Bun) 运行在 http://localhost:${port}`)
 console.log(`💾 使用本地 KV 存储：.kv-storage/`)
-console.log(`🔐 管理员凭据：${process.env.ADMIN_USERNAME || 'admin'} / ${process.env.ADMIN_PASSWORD || 'password123'}`)
+console.log(`🔐 默认管理员：admin / Admin@123456`)
 console.log(`🔥 热重载已启用 - 代码变更时自动重启`)
 
 export default {

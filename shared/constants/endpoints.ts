@@ -6,12 +6,7 @@ export const API_ENDPOINTS = {
   // Claude API 代理端点（保持原路径兼容性）
   CLAUDE_MESSAGES: '/v1/messages',
   
-  // 认证管理端点
-  AUTH_URL: '/api/auth/url',           // 获取授权URL
-  AUTH_TOKEN: '/api/auth/token',       // token 管理 (POST创建/GET查看)
-  
   // 管理中心端点
-  ADMIN_AUTH: '/api/admin/auth',       // 管理员认证
   ADMIN_DASHBOARD: '/api/admin/dashboard', // 仪表板数据
   ADMIN_PROVIDERS: '/api/admin/providers', // 模型供应商管理
   ADMIN_MODELS: '/api/admin/models',   // 可用模型列表

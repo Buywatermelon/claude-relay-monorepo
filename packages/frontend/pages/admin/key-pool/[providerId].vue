@@ -8,7 +8,7 @@
             <h1 class="text-3xl font-bold text-gray-900">密钥池管理</h1>
             <p class="text-sm text-gray-600 mt-2">{{ providerName }} - 管理 API 密钥池</p>
           </div>
-          <NuxtLink to="/admin/dashboard?tab=providers" 
+          <NuxtLink to="/admin?tab=providers" 
                    class="text-orange-600 hover:text-orange-700 flex items-center space-x-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -232,6 +232,11 @@
 <script setup lang="ts">
 import type { ApiKey, KeyPoolStats } from '../../../../../shared/types/key-pool'
 import type { ModelProvider } from '../../../../../shared/types/admin/providers'
+
+// 添加认证中间件
+definePageMeta({
+  middleware: 'auth'
+})
 import ConfirmDialog from '../../../components/ui/ConfirmDialog.vue'
 
 const route = useRoute()
@@ -268,13 +273,8 @@ const confirmDialogConfig = ref<{
 } | null>(null)
 const deletingKeyId = ref<string | null>(null)
 
-// 检查认证状态
+// 加载数据
 onMounted(async () => {
-  if (sessionStorage.getItem('admin_authenticated') !== 'true') {
-    await router.push('/admin')
-    return
-  }
-  
   await loadProviderInfo()
   await loadKeyPoolData()
 })
