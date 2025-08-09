@@ -3,13 +3,18 @@ import { cors } from 'hono/cors'
 import { HTTPException } from 'hono/http-exception'
 import { adminRoutes } from './routes/admin/index'
 import { claudeRoutes } from './routes/proxy'
+import { authRoutes } from './routes/auth'
 import { kvValidator } from './middleware/kv-validator'
 import { ClaudeAccountService } from './services/admin/index'
 import { AppError } from './utils/errors'
+import { initDatabase } from './database/init'
 import type { Bindings } from './types/env'
 
 // ==================== 应用初始化 ====================
 const app = new Hono<{ Bindings: Bindings }>()
+
+// 初始化数据库
+initDatabase()
 
 // ==================== 中间件配置 ====================
 // KV namespace 验证中间件
@@ -20,7 +25,7 @@ app.use('*', cors({
   origin: '*',
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'anthropic-version', 'anthropic-beta'],
-  credentials: false
+  credentials: true  // 启用 cookies
 }))
 
 // ==================== 基础路由 ====================
@@ -35,6 +40,10 @@ app.get('/health', (c) => {
 })
 
 // ==================== 功能路由挂载 ====================
+// 用户认证路由
+app.route('/api/auth', authRoutes)
+
+// 管理后台路由
 app.route('/api/admin', adminRoutes)
 
 // Claude API 代理路由

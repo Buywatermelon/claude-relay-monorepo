@@ -98,20 +98,18 @@ export const userPermissions = sqliteTable('user_permissions', {
 ]);
 
 // ============================================
-// 会话表
+// 会话表 (Lucia Auth 兼容)
 // ============================================
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  tokenHash: text('token_hash').notNull().unique(),
-  expiresAt: text('expires_at').notNull(),
+  expiresAt: integer('expires_at').notNull(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
-  createdAt: text('created_at').default('CURRENT_TIMESTAMP'),
-  lastAccessedAt: text('last_accessed_at').default('CURRENT_TIMESTAMP')
+  createdAt: integer('created_at').$defaultFn(() => Date.now()),
+  lastAccessedAt: integer('last_accessed_at').$defaultFn(() => Date.now())
 }, (table) => [
   index('idx_sessions_user').on(table.userId),
-  index('idx_sessions_token').on(table.tokenHash),
   index('idx_sessions_expires').on(table.expiresAt)
 ]);
 
