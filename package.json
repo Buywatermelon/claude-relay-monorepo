@@ -1,5 +1,5 @@
 {
-  "name": "claude-relay-monorepo",
+  "name": "prism-hub-monorepo",
   "version": "1.0.0",
   "private": true,
   "workspaces": [
@@ -28,10 +28,13 @@
     "cloudflare",
     "nuxt",
     "hono",
-    "typescript"
+    "typescript",
+    "ai-gateway",
+    "llm-proxy",
+    "unified-api"
   ],
   "license": "MIT",
-  "description": "Claude Relay Monorepo with Nuxt frontend and Hono backend",
+  "description": "Prism Hub - Unified gateway for multiple AI models. One API, infinite possibilities.",
   "devDependencies": {
     "@nuxt/eslint-config": "^0.3.0",
     "@types/node": "^20.0.0",

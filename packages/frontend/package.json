@@ -9,7 +9,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "deploy": "npx wrangler pages deploy dist --project-name claude-relay-frontend"
+    "deploy": "npx wrangler pages deploy dist --project-name prism-hub-frontend"
   },
   "dependencies": {
     "nuxt": "^4.0.1",

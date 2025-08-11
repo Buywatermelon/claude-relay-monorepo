@@ -1,10 +1,10 @@
-# Claude Relay
+# Prism Hub
 
-🚀 现代化的 Claude API 代理服务，支持官方和第三方 LLM 供应商智能路由，基于 Cloudflare Workers 全球部署。
+🚀 统一 AI 模型网关，像棱镜折射光线一样，将单个 API 请求智能分发到多个 AI 供应商。基于 Cloudflare Workers 全球部署。
 
 ## ✨ 核心特性
 
-- 🔐 **智能代理** - 官方 Claude + 第三方 LLM（魔搭 Qwen、智谱 AI、Google Gemini）
+- 🔐 **智能路由** - 支持 Claude、魔搭 Qwen、智谱 AI、Google Gemini 等多个 AI 供应商
 - 🌐 **全球部署** - Cloudflare Workers 边缘网络，超低延迟
 - 💻 **可视化管理** - 现代化 Web 界面，一站式管理所有配置
 - 🔑 **企业级密钥池** - 智能轮换、故障恢复、实时监控
@@ -63,7 +63,7 @@
 
 ## 🚀 快速开始
 
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/your-username/claude-relay-monorepo)
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/your-username/prism-hub-monorepo)
 
 ### 1️⃣ Fork 仓库 → 2️⃣ 配置 Secrets → 3️⃣ 一键部署
 
@@ -75,7 +75,7 @@
 
 **API 端点：** `https://your-domain.workers.dev/v1/messages`
 
-**Claude Code 配置：**
+**Claude Code 和其他 AI 工具配置：**
 ```json
 {
   "env": {

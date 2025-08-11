@@ -92,7 +92,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8787',
-      appName: process.env.NUXT_PUBLIC_APP_NAME || 'Claude Relay Frontend',
+      appName: process.env.NUXT_PUBLIC_APP_NAME || 'Prism Hub Frontend',
       appVersion: process.env.NUXT_PUBLIC_APP_VERSION || '1.0.0'
     }
   },

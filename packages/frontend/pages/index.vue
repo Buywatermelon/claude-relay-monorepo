@@ -22,7 +22,7 @@
                 欢迎回来
               </h2>
               <p class="mt-2 text-sm text-gray-600">
-                登录到 Claude Relay 管理中心
+                登录到 Prism Hub 管理中心
               </p>
             </div>
 
@@ -149,9 +149,9 @@ definePageMeta({
 })
 
 useHead({
-  title: '登录 - Claude Relay',
+  title: '登录 - Prism Hub',
   meta: [
-    { name: 'description', content: '登录到 Claude Relay 管理中心' }
+    { name: 'description', content: '登录到 Prism Hub 管理中心' }
   ]
 })
 

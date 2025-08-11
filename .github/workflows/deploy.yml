@@ -49,7 +49,7 @@ jobs:
           
           # 在根目录创建统一的 wrangler.toml，让 Wrangler 处理 TypeScript 构建
           cat > deploy/wrangler.toml << EOF
-          name = "claude-relay-unified"
+          name = "prism-hub-unified"
           main = "../packages/backend/src/index.ts"
           compatibility_date = "2025-07-25"
           

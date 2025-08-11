@@ -29,7 +29,7 @@ const localFetch = async (request: Request) => {
 
 // 启动服务器
 const port = process.env.PORT || 8787
-console.log(`🚀 Claude Relay 后端 (Bun) 运行在 http://localhost:${port}`)
+console.log(`🚀 Prism Hub 后端 (Bun) 运行在 http://localhost:${port}`)
 console.log(`💾 使用本地 KV 存储：.kv-storage/`)
 console.log(`🔐 默认管理员：admin / Admin@123456`)
 console.log(`🔥 热重载已启用 - 代码变更时自动重启`)

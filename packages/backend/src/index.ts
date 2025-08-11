@@ -45,7 +45,7 @@ app.use('*', cors({
 app.get('/health', (c) => {
   return c.json({ 
     status: 'ok',
-    message: 'Claude Relay Backend is running',
+    message: 'Prism Hub Backend is running',
     version: '1.0.0',
     timestamp: new Date().toISOString()
   })

@@ -19,7 +19,7 @@
                 </svg>
               </div>
               <h1 class="text-lg font-semibold text-gray-900">
-                Claude Relay
+                Prism Hub
               </h1>
             </NuxtLink>
           </div>

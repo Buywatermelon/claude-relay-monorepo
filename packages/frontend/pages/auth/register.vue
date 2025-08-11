@@ -22,7 +22,7 @@
                 创建新账号
               </h2>
               <p class="mt-2 text-sm text-gray-600">
-                注册 Claude Relay 管理账号
+                注册 Prism Hub 管理账号
               </p>
             </div>
 
@@ -212,9 +212,9 @@ definePageMeta({
 })
 
 useHead({
-  title: '注册 - Claude Relay',
+  title: '注册 - Prism Hub',
   meta: [
-    { name: 'description', content: '注册 Claude Relay 管理账号' }
+    { name: 'description', content: '注册 Prism Hub 管理账号' }
   ]
 })
 

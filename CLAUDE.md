@@ -42,7 +42,7 @@
 
 ## 核心功能
 
-### Claude Relay 后端
+### Prism Hub 后端
 - **智能代理**: 自动路由请求到官方 Claude API 或第三方 LLM 供应商
 - **多格式转换**: 支持 Claude-OpenAI、Claude-Gemini 格式转换
 - **Key Pool 管理**: 企业级 API 密钥池管理，支持智能轮换和故障恢复
@@ -67,8 +67,8 @@
 
 ## API 端点
 
-### Claude API 代理
-- `POST /v1/messages` - 智能代理 Claude API，支持官方和第三方供应商路由
+### AI 模型代理
+- `POST /v1/messages` - 智能路由 AI API 请求，支持多个 AI 供应商
 - `GET /v1/health` - 服务健康检查
 
 ### 管理中心 API
@@ -129,9 +129,9 @@ CLAUDE_CLIENT_SECRET=your_client_secret  # 可选
 - 后端: `http://localhost:8787`
 
 ### 生产环境
-- **统一访问地址**: `https://claude-relay-unified.{你的子域名}.workers.dev`
-- **管理中心**: `https://claude-relay-unified.{你的子域名}.workers.dev/admin`
-- **API 端点**: `https://claude-relay-unified.{你的子域名}.workers.dev/v1/messages`
+- **统一访问地址**: `https://prism-hub-unified.{你的子域名}.workers.dev`
+- **管理中心**: `https://prism-hub-unified.{你的子域名}.workers.dev/admin`
+- **API 端点**: `https://prism-hub-unified.{你的子域名}.workers.dev/v1/messages`
 
 ## 代码组织原则
 
