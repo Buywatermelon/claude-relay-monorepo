@@ -59,7 +59,7 @@
           <!-- 预设模型快速添加 -->
           <div v-if="availableModels.length > 0" class="bg-gray-50 p-4 rounded-xl">
             <label class="block text-sm font-medium text-gray-600 mb-2">快速添加预设模型</label>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-2">
               <button v-for="model in availableModels" 
                       :key="model"
                       @click="addModel(model)"
