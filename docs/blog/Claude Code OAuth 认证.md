@@ -98,31 +98,32 @@ PKCE 的巧妙之处在于：
 
 ```mermaid
 %%{init: {
-  'theme': 'dark',
+  'theme': 'base',
   'themeVariables': {
-    'primaryColor': '#60a5fa',
-    'primaryTextColor': '#e5e7eb',
-    'primaryBorderColor': '#93c5fd',
-    'lineColor': '#60a5fa',
-    'secondaryColor': '#475569',
-    'background': '#1e293b',
-    'mainBkg': '#1e293b',
-    'secondBkg': '#334155',
-    'tertiaryColor': '#475569',
-    'labelBoxBkgColor': '#334155',
-    'labelBoxBorderColor': '#60a5fa',
-    'labelTextColor': '#f3f4f6',
-    'actorBkg': '#334155',
-    'actorBorder': '#60a5fa',
-    'actorTextColor': '#f3f4f6',
-    'actorLineColor': '#94a3b8',
-    'noteBkgColor': '#fbbf24',
-    'noteBorderColor': '#f59e0b',
-    'noteTextColor': '#1e293b',
-    'signalColor': '#e5e7eb',
-    'signalTextColor': '#e5e7eb',
-    'sequenceNumberColor': '#1e293b',
-    'edgeLabelBackground': '#334155'
+    'primaryColor': '#6366f1',
+    'primaryTextColor': '#4b5563',
+    'primaryBorderColor': '#6366f1',
+    'lineColor': '#4b5563',
+    'secondaryColor': '#e5e7eb',
+    'tertiaryColor': '#f3f4f6',
+    'mainBkg': '#f9fafb',
+    'secondBkg': '#f3f4f6',
+    'noteTextColor': '#1f2937',
+    'noteBkgColor': '#fef3c7',
+    'noteBorderColor': '#d97706',
+    'actorBkg': '#ffffff',
+    'actorBorder': '#6366f1',
+    'actorTextColor': '#1f2937',
+    'actorLineColor': '#6b7280',
+    'signalColor': '#374151',
+    'signalTextColor': '#374151',
+    'labelBoxBkgColor': '#f9fafb',
+    'labelBoxBorderColor': '#6366f1',
+    'labelTextColor': '#1f2937',
+    'loopTextColor': '#1f2937',
+    'activationBorderColor': '#6366f1',
+    'activationBkgColor': '#e0e7ff',
+    'sequenceNumberColor': '#ffffff'
   }
 }}%%
 
@@ -137,7 +138,7 @@ sequenceDiagram
 
     Note over User,API: 🔐 OAuth 2.0 + PKCE 认证流程
     
-    rect rgba(96, 165, 250, 0.2)
+    rect rgb(219, 234, 254)
         Note right of User: 🔵 授权请求阶段
         User->>+CLI: 运行 claude 命令
         CLI->>CLI: 生成 PKCE 密钥对<br/>• code_verifier (随机)<br/>• code_challenge (SHA256)<br/>• state (CSRF 防护)
@@ -148,7 +149,7 @@ sequenceDiagram
         deactivate CLI
     end
     
-    rect rgba(168, 85, 247, 0.2)
+    rect rgb(233, 213, 255)
         Note right of User: 🟣 授权响应阶段
         Auth->>Browser: 重定向到回调页面<br/>(返回 code + state)
         Browser->>User: 显示授权码<br/>(一次性有效，10分钟过期)
@@ -160,7 +161,7 @@ sequenceDiagram
         deactivate CLI
     end
     
-    rect rgba(34, 197, 94, 0.2)
+    rect rgb(209, 250, 229)
         Note right of User: 🟢 Token 管理阶段
         CLI->>CLI: 保存 Token 到本地<br/>~/.credentials.json
         CLI->>+API: 使用 Access Token<br/>调用 API
@@ -193,16 +194,16 @@ $ claude
 
 **OAuth URL 参数解析：**
 
-| 类别 | 参数 | 值 | 说明 |
-|------|------|-----|------|
-| **身份标识** | `client_id` | `9d1c250a-e61b-44d9-88ed-5944d1962f5e` | Claude Code 的 OAuth 客户端 ID（所有 Claude Code 实例共用） |
-| **授权模式** | `code` | `true` | 启用授权码模式标识 |
-| **授权模式** | `response_type` | `code` | 指定 OAuth 流程类型为授权码模式 |
-| **权限范围** | `scope` | `org:create_api_key`<br>`user:profile`<br>`user:inference` | 请求的权限范围：<br>• 创建组织 API 密钥<br>• 访问用户信息<br>• 执行推理请求 |
-| **流程控制** | `redirect_uri` | `https://console.anthropic.com/oauth/code/callback` | 授权成功后的回调地址 |
-| **安全机制** | `state` | `1ejObPePvfbUNBtWwaWYr6vm8AUHMCQJbo6tsfKjKiU` | 防止 CSRF 攻击（[详见预备知识](#221-state-参数与-csrf-防护)） |
-| **安全机制** | `code_challenge` | `aM_o8LfwOVdvgSNkK3Gr4RLWS4olNGv4tuGBl3X3_Mo` | PKCE 挑战码（[详见预备知识](#222-pkce-安全机制)） |
-| **安全机制** | `code_challenge_method` | `S256` | PKCE 加密方法（SHA256） |
+| 类别 | 参数 | 说明 |
+|------|------|------|
+| **身份** | `client_id` | Claude Code 的 OAuth 客户端 ID（所有 Claude Code 实例共用） |
+| **模式** | `code` | 启用授权码模式标识 |
+| **模式** | `response_type` | 指定 OAuth 流程类型为授权码模式 |
+| **权限** | `scope` | 请求的权限范围：创建组织 API 密钥、访问用户信息、执行推理请求 |
+| **回调** | `redirect_uri` | 授权成功后的回调地址 |
+| **安全** | `state` | 防止 CSRF 攻击（[详见预备知识](#221-state-参数与-csrf-防护)） |
+| **安全** | `code_challenge` | PKCE 挑战码（[详见预备知识](#222-pkce-安全机制)） |
+| **安全** | `code_challenge_method` | PKCE 加密方法（SHA256） |
 
 这些参数共同构成了一个完整的授权请求。
 
