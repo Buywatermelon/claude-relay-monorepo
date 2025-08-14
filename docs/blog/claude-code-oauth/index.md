@@ -190,7 +190,7 @@ $ claude
 
 当在 Claude Code CLI 中选择账号登录后，Claude Code 会生成一个 OAuth 授权链接并尝试在浏览器中打开。如果浏览器无法自动打开，CLI 会显示完整的授权 URL 供用户手动访问。
 
-![Claude Code OAuth URL](./claude-code-oauth-url.png)
+![Claude Code OAuth URL](./images/claude-code-oauth-url.png)
 
 **OAuth URL 参数解析：**
 
@@ -213,7 +213,7 @@ $ claude
 
 在浏览器中打开授权链接后，会跳转到 Anthropic 的 OAuth 授权页面：
 
-![OAuth 授权页面](./oauth-authorization-page.png)
+![OAuth 授权页面](./images/oauth-authorization-page.png)
 
 在这个页面上，Anthropic 会明确展示 Claude Code 请求的权限范围（即上一步中的 scope 参数）。只有在你确认并点击"Authorize"后，Anthropic 才会颁发授权码。这确保了用户对授权过程的完全知情和控制。
 
@@ -223,7 +223,7 @@ $ claude
 
 当用户在授权页面点击 "Authorize" 按钮后，浏览器会重定向到回调页面：
 
-![OAuth 回调页面](./oauth-callback-page.png)
+![OAuth 回调页面](./images/oauth-callback-page.png)
 
 **关键流程解析：**
 
@@ -245,7 +245,7 @@ $ claude
 
 回到 CLI 界面，将授权码粘贴到命令行中，叮...登录成功!!!：
 
-![CLI 粘贴授权码](./cli-paste-code.png)
+![CLI 粘贴授权码](./images/cli-paste-code.png)
 
 这一步中，实际上 CLI 收到授权码后，立即发起 Token 交换请求：
 
