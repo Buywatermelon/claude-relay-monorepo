@@ -2,7 +2,7 @@
 
 ## 1. 引言
 
-在尝试为 Claude Code 引入入外部 LLM 供应商时，我们遇到的核心挑战：如何在 Claude API 和 OpenAI API 格式之间进行准确的转换。
+在尝试为 Claude Code 引入外部 LLM 供应商时，我们遇到的核心挑战：如何在 Claude API 和 OpenAI API 格式之间进行准确的转换。
 
 这实际并不是一个简单的问题。Claude API 有其独特的设计 —— thinking 模式、tool use 机制、多模态支持等，每个特性都需要深入理解才能正确转换。
 
