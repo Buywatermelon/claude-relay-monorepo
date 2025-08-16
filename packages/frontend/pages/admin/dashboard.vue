@@ -156,6 +156,8 @@ const currentModelDisplay = computed(() => {
 
 // 监听标签页切换，在切换到路由配置时重新加载供应商数据
 watch(activeTab, async (newTab) => {
+  await router.replace({ query: {...route.query, tab: newTab } })
+  
   if (newTab === 'routes') {
     // 切换到路由配置页面时，重新加载供应商列表以确保数据最新
     await loadProviders()
