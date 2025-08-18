@@ -39,6 +39,7 @@
         "drizzle-kit": "^0.31.4",
         "drizzle-orm": "^0.44.4",
         "miniflare": "^4.20250712.2",
+        "msw": "^2.10.5",
         "tsx": "^4.20.3",
         "typescript": "^5.0.0",
         "vitest": "^3.2.4"
