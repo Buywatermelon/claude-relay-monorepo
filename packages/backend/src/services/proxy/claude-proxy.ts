@@ -3,20 +3,17 @@
  */
 
 import type { MessageCreateParamsBase } from '@anthropic-ai/sdk/resources/messages'
-import type { SelectedConfig } from './engines/types'
 import { ClaudeEngine, ProviderEngine } from './engines'
-import { RouteConfigRepository } from '../../repositories'
+import { RouteConfigService } from '../admin/route-configs'
 import { ValidationError } from '../../utils/errors'
 
 export class ClaudeProxyService {
   private claudeEngine: ClaudeEngine
   private providerEngine: ProviderEngine
-  private routeConfigRepo: RouteConfigRepository
   
-  constructor(private kv: KVNamespace) {
-    this.claudeEngine = new ClaudeEngine(kv)
-    this.providerEngine = new ProviderEngine(kv)
-    this.routeConfigRepo = new RouteConfigRepository(kv)
+  constructor(private workspaceId: string) {
+    this.claudeEngine = new ClaudeEngine(workspaceId)
+    this.providerEngine = new ProviderEngine(workspaceId)
   }
   
   /**
@@ -27,14 +24,11 @@ export class ClaudeProxyService {
     const claudeRequest = await request.json() as MessageCreateParamsBase
     
     // 获取选择的配置
-    const selectedConfig = await this.routeConfigRepo.getSelectedConfig()
-    if (!selectedConfig) {
-      // 默认使用 Claude
-      return await this.claudeEngine.processRequest(claudeRequest)
-    }
+    const routeConfigService = new RouteConfigService(this.workspaceId)
+    const selectedConfig = await routeConfigService.getSelectedConfig()
     
-    // 根据配置类型选择引擎
-    if (selectedConfig.type === 'claude') {
+    if (!selectedConfig || selectedConfig.type === 'claude') {
+      // 默认使用 Claude
       return await this.claudeEngine.processRequest(claudeRequest)
     } else if (selectedConfig.type === 'route') {
       return await this.providerEngine.processRequest(claudeRequest)

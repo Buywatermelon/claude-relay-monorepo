@@ -7,7 +7,7 @@ import type { ModelProvider } from '../../../../../../shared/types/admin/provide
 import type { ModelTarget, RouteConfig } from '../../../../../../shared/types/admin/routes'
 import type { ClaudeToken } from '../../../types/proxy'
 import type { ApiKey } from '../../../../../../shared/types/key-pool'
-import type { Transformer } from '../transformers/base-transformer'
+import type { IAPIProcessor } from '../transformers'
 
 // 重新导出类型以便其他文件使用
 export type { ModelTarget, RouteConfig }
@@ -67,11 +67,9 @@ export interface SelectedConfig {
 
 /**
  * Provider 解析结果
+ * 只包含处理请求所需的必要信息
  */
 export interface ProviderResolution {
-  provider: ModelProvider
   selectedModel: string
-  apiKey: ApiKey
-  routeConfig: RouteConfig
-  transformer: Transformer
+  transformer: IAPIProcessor
 }

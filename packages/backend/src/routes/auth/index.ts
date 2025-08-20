@@ -3,118 +3,66 @@
  */
 
 import { Hono } from 'hono';
-import { validator } from 'hono/validator';
 import { zValidator } from '@hono/zod-validator';
-import { UserAuthService } from '../../services/auth/user-auth.service';
-import { lucia } from '../../auth/lucia';
-import { registerSchema, loginSchema, loginByEmailSchema } from './schemas';
+import { SupabaseAuthService } from '../../services/auth/supabase-auth.service';
+import { registerSchema, loginByEmailSchema, refreshTokenSchema } from './schemas';
 
 export const authRoutes = new Hono();
-const authService = new UserAuthService();
+const authService = new SupabaseAuthService();
 
 // 用户注册
 authRoutes.post('/register',
   zValidator('json', registerSchema),
   async (c) => {
     const data = c.req.valid('json');
-    const result = await authService.register(data);
-
-    // 设置会话 cookie
-    c.header('Set-Cookie', result.sessionCookie);
-
-    return c.json({
-      user: {
-        id: result.user.id,
-        username: result.user.username,
-        email: result.user.email,
-        isActive: result.user.isActive,
-        isSuperAdmin: result.user.isSuperAdmin
-      },
-      sessionId: result.session.id
+    const user = await authService.register({
+      email: data.email,
+      password: data.password,
+      fullName: data.username, // 使用 username 作为 fullName
     });
-  }
-);
-
-// 用户登录（用户名）
-authRoutes.post('/login',
-  zValidator('json', loginSchema),
-  async (c) => {
-    const data = c.req.valid('json');
-    const result = await authService.login(data);
-
-    // 设置会话 cookie
-    c.header('Set-Cookie', result.sessionCookie);
 
     return c.json({
       user: {
-        id: result.user.id,
-        username: result.user.username,
-        email: result.user.email,
-        isActive: result.user.isActive,
-        isSuperAdmin: result.user.isSuperAdmin
-      },
-      sessionId: result.session.id
+        id: user.id,
+        email: user.email,
+        fullName: user.user_metadata?.full_name
+      }
     });
   }
 );
 
 // 用户登录（邮箱）
-authRoutes.post('/login/email',
+authRoutes.post('/login',
   zValidator('json', loginByEmailSchema),
   async (c) => {
     const data = c.req.valid('json');
-    const result = await authService.loginByEmail(data);
-
-    // 设置会话 cookie
-    c.header('Set-Cookie', result.sessionCookie);
+    const result = await authService.login(data.email, data.password);
 
     return c.json({
       user: {
         id: result.user.id,
-        username: result.user.username,
         email: result.user.email,
-        isActive: result.user.isActive,
-        isSuperAdmin: result.user.isSuperAdmin
+        fullName: result.user.user_metadata?.full_name
       },
-      sessionId: result.session.id
+      session: {
+        access_token: result.session.access_token,
+        refresh_token: result.session.refresh_token,
+        expires_at: result.session.expires_at
+      }
     });
   }
 );
 
-// 用户登出
-authRoutes.post('/logout',
-  validator('header', (headers) => {
-    const cookie = headers['cookie'] ?? '';
-    const sessionId = lucia.readSessionCookie(cookie);
-    
-    if (!sessionId) {
-      throw new Error('未找到会话');
-    }
-    
-    return { sessionId };
-  }),
-  async (c) => {
-    const { sessionId } = c.req.valid('header');
-    const result = await authService.logout(sessionId);
-
-    // 清除会话 cookie
-    c.header('Set-Cookie', result.sessionCookie);
-
-    return c.json({
-      message: '登出成功'
-    });
-  }
-);
 
 // 验证会话
 authRoutes.get('/session',
   async (c) => {
-    // 从 cookie 中读取会话 ID
-    const cookie = c.req.header('cookie') ?? '';
-    const sessionId = lucia.readSessionCookie(cookie);
+    // 从 Authorization header 获取 token
+    const authHeader = c.req.header('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
     
-    // 如果没有会话 ID，返回未认证状态（不是错误）
-    if (!sessionId) {
+    // 如果没有 token，返回未认证状态
+    if (!token) {
       return c.json({
         user: null,
         session: null,
@@ -122,11 +70,10 @@ authRoutes.get('/session',
       });
     }
     
-    // 验证会话
-    const result = await authService.validateSession(sessionId);
-
-    // 如果会话无效或已过期，返回未认证状态（不是错误）
-    if (!result.user || !result.session) {
+    // 验证 token
+    const user = await authService.verifyToken(token);
+    
+    if (!user) {
       return c.json({
         user: null,
         session: null,
@@ -137,50 +84,59 @@ authRoutes.get('/session',
     // 返回认证用户信息
     return c.json({
       user: {
-        id: result.user.id,
-        username: result.user.username,
-        email: result.user.email,
-        isActive: result.user.isActive,
-        isSuperAdmin: result.user.isSuperAdmin
-      },
-      session: {
-        id: result.session.id,
-        expiresAt: result.session.expiresAt
+        id: user.id,
+        email: user.email!,
+        fullName: user.user_metadata?.full_name
       },
       authenticated: true
     });
   }
 );
 
+// 刷新访问令牌
+authRoutes.post('/refresh',
+  zValidator('json', refreshTokenSchema),
+  async (c) => {
+    const data = c.req.valid('json');
+    
+    const result = await authService.refreshToken(data.refresh_token);
+    
+    if (!result.session) {
+      throw new Error('刷新令牌失败');
+    }
+    
+    return c.json({
+      session: {
+        access_token: result.session.access_token,
+        refresh_token: result.session.refresh_token,
+        expires_at: result.session.expires_at
+      }
+    });
+  }
+);
+
 // 获取当前用户信息
 authRoutes.get('/me',
-  validator('header', (headers) => {
-    const cookie = headers['cookie'] ?? '';
-    const sessionId = lucia.readSessionCookie(cookie);
+  async (c) => {
+    // 从 Authorization header 获取 token
+    const authHeader = c.req.header('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
     
-    if (!sessionId) {
+    if (!token) {
       throw new Error('未登录');
     }
     
-    return { sessionId };
-  }),
-  async (c) => {
-    const { sessionId } = c.req.valid('header');
-    const result = await authService.validateSession(sessionId);
+    // 验证 token
+    const user = await authService.verifyToken(token);
 
-    if (!result.user || !result.session) {
+    if (!user) {
       throw new Error('会话无效或已过期');
     }
 
     return c.json({
-      id: result.user.id,
-      username: result.user.username,
-      email: result.user.email,
-      isActive: result.user.isActive,
-      isSuperAdmin: result.user.isSuperAdmin,
-      createdAt: result.user.createdAt,
-      lastLoginAt: result.user.lastLoginAt,
-      loginCount: result.user.loginCount
+      id: user.id,
+      email: user.email,
+      fullName: user.user_metadata?.full_name
     });
   }
 );

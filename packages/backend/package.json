@@ -15,19 +15,19 @@
         "test:watch": "vitest",
         "test:ui": "vitest --ui",
         "test:log": "mkdir -p test-logs && vitest run 2>&1 | tee test-logs/all-tests-$(date +%Y%m%d-%H%M%S).log",
-        "db:migrate": "bun run src/database/migrate.ts",
-        "db:push": "drizzle-kit push",
-        "db:studio": "drizzle-kit studio",
-        "db:seed": "bun run src/database/seed.ts",
-        "db:init": "npm run db:migrate && npm run db:seed"
+        "supabase:start": "supabase start",
+        "supabase:stop": "supabase stop",
+        "supabase:reset": "supabase db reset",
+        "supabase:migrate": "supabase db push",
+        "supabase:types": "supabase gen types typescript --local > src/lib/database.types.ts"
     },
     "dependencies": {
         "@anthropic-ai/sdk": "^0.57.0",
+        "@casl/ability": "^6.7.3",
         "@google/genai": "^1.12.0",
         "@hono/zod-validator": "^0.7.2",
-        "@lucia-auth/adapter-drizzle": "^1.1.0",
+        "@supabase/supabase-js": "^2.48.1",
         "hono": "^4.0.0",
-        "lucia": "^3.2.2",
         "openai": "^5.11.0",
         "oslo": "^1.2.1",
         "zod": "^4.0.16"
@@ -36,10 +36,8 @@
         "@cloudflare/workers-types": "^4.20240512.0",
         "@vitest/ui": "^3.2.4",
         "bun-types": "^1.2.19",
-        "drizzle-kit": "^0.31.4",
-        "drizzle-orm": "^0.44.4",
         "miniflare": "^4.20250712.2",
-        "msw": "^2.10.5",
+        "supabase": "^1.226.4",
         "tsx": "^4.20.3",
         "typescript": "^5.0.0",
         "vitest": "^3.2.4"

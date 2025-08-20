@@ -1,50 +1,45 @@
-/**
- * 认证中间件
- */
+import { createMiddleware } from 'hono/factory'
+import { SupabaseAuthService } from '../services/auth/supabase-auth.service'
+import type { AuthUser } from '@supabase/supabase-js'
 
-import { createMiddleware } from 'hono/factory';
-import { lucia } from '../auth/lucia';
-import { UserAuthService } from '../services/auth/user-auth.service';
-import type { User, Session } from '../database/schema';
-
-// 扩展 Hono Context 类型
+// 扩展 Hono Context
 declare module 'hono' {
   interface ContextVariableMap {
-    user: User | null;
-    session: Session | null;
+    user: AuthUser
+    token: string
   }
 }
 
-const authService = new UserAuthService();
+const authService = new SupabaseAuthService()
 
 /**
- * 认证保护中间件
- * 要求用户必须登录
+ * 简单的认证中间件
+ * 只负责验证 token 并将用户信息注入到 context 中
  */
 export const requireAuth = createMiddleware(async (c, next) => {
-  const sessionId = lucia.readSessionCookie(c.req.header('Cookie') ?? '');
+  // 1. 获取认证令牌
+  const authHeader = c.req.header('Authorization')
+  const token = authHeader?.replace('Bearer ', '')
   
-  if (!sessionId) {
-    return c.json({ error: '未登录' }, 401);
+  if (!token) {
+    return c.json({ error: '未提供认证令牌' }, 401)
   }
   
-  const result = await authService.validateSession(sessionId);
-  
-  if (!result.user || !result.session) {
-    return c.json({ error: '会话无效或已过期' }, 401);
+  try {
+    // 2. 验证用户
+    const user = await authService.verifyToken(token)
+    
+    if (!user) {
+      return c.json({ error: '无效的认证令牌' }, 401)
+    }
+    
+    // 3. 将用户信息注入到 context
+    c.set('user', user)
+    c.set('token', token)
+    
+    await next()
+  } catch (error) {
+    console.error('认证错误:', error)
+    return c.json({ error: '认证失败' }, 401)
   }
-  
-  // 检查用户是否激活
-  if (!result.user.isActive) {
-    return c.json({ error: '用户账号已被禁用' }, 403);
-  }
-  
-  c.set('user', result.user);
-  c.set('session', result.session);
-  
-  // 设置 cookie 以保持会话
-  c.header('Set-Cookie', lucia.createSessionCookie(result.session.id).serialize());
-  
-  await next();
-});
-
+})

@@ -1,24 +1,15 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { HTTPException } from 'hono/http-exception'
-import { adminRoutes } from './routes/admin/index'
-import { claudeRoutes } from './routes/proxy'
-import { authRoutes } from './routes/auth'
-import { kvValidator } from './middleware/kv-validator'
+import { adminRoutes, claudeRoutes, authRoutes, workspaceRoutes, apiRoutes } from './routes'
 import { ClaudeAccountService } from './services/admin/index'
 import { AppError } from './utils/errors'
-import { initDatabase } from './database/init'
 import type { Bindings } from './types/env'
 
 // ==================== 应用初始化 ====================
 const app = new Hono<{ Bindings: Bindings }>()
 
-// 初始化数据库
-initDatabase()
-
 // ==================== 中间件配置 ====================
-// KV namespace 验证中间件
-app.use('*', kvValidator())
 
 // CORS 配置 - 支持凭证的请求
 app.use('*', cors({
@@ -52,10 +43,18 @@ app.get('/health', (c) => {
 })
 
 // ==================== 功能路由挂载 ====================
+// 1. 不需要工作空间上下文的路由
 // 用户认证路由
-app.route('/api/auth', authRoutes)
+app.route('/auth', authRoutes)
 
-// 管理后台路由
+// 工作空间管理路由（创建、列表、加入等）
+app.route('/workspaces', workspaceRoutes)
+
+// 2. 需要工作空间上下文的 API 路由
+app.route('/api', apiRoutes)
+
+// 3. 系统级路由
+// 管理后台路由（系统管理，不依赖工作空间）
 app.route('/api/admin', adminRoutes)
 
 // Claude API 代理路由

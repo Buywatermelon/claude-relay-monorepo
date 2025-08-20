@@ -9,7 +9,7 @@ import { HTTPException } from 'hono/http-exception'
 import { TokenExpiredError } from '../../../utils/errors'
 
 export class ClaudeEngine implements Engine {
-  constructor(private kv: KVNamespace) {}
+  constructor(private workspaceId: string) {}
   
   async processRequest(request: MessageCreateParamsBase): Promise<Response> {
     // 1. 获取 token

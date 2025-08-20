@@ -4,18 +4,12 @@
 
 import { SelectedModel } from '../../../../../shared/types/admin/models'
 import { HTTPException } from 'hono/http-exception'
-import { ModelRepository, ProviderRepository, RouteConfigRepository } from '../../repositories'
+import { getSupabaseAdmin } from '../../lib/supabase'
 
 export class ModelService {
-  private modelRepo: ModelRepository
-  private providerRepo: ProviderRepository
-  private routeConfigRepo: RouteConfigRepository
-
-  constructor(adminKv: KVNamespace) {
-    this.modelRepo = new ModelRepository(adminKv)
-    this.providerRepo = new ProviderRepository(adminKv)
-    this.routeConfigRepo = new RouteConfigRepository(adminKv)
-  }
+  private supabase = getSupabaseAdmin()
+  
+  constructor(private workspaceId: string) {}
 
   // 获取可用模型列表（现在返回 Claude 官方模型和路由配置）
   async getAvailableModels(): Promise<Array<{ id: string; name: string; type: 'claude' | 'route'; routeId?: string }>> {
@@ -24,8 +18,18 @@ export class ModelService {
     ]
 
     // 获取所有路由配置
-    const routeConfigs = await this.routeConfigRepo.getAllConfigs()
-    for (const config of routeConfigs) {
+    const { data: routeConfigs, error } = await this.supabase
+      .from('route_configs')
+      .select('*')
+      .eq('workspace_id', this.workspaceId)
+      .eq('is_active', true)
+
+    if (error) {
+      console.error('获取路由配置失败:', error)
+      return models
+    }
+
+    for (const config of routeConfigs || []) {
       models.push({
         id: config.id,
         name: `路由配置: ${config.name}`,
@@ -39,9 +43,24 @@ export class ModelService {
 
   // 获取当前选中的模型
   async getSelectedModel(): Promise<SelectedModel> {
-    const selectedConfig = await this.routeConfigRepo.getSelectedConfig()
+    // 从工作空间设置中获取选中的模型
+    const { data: workspace, error } = await this.supabase
+      .from('workspaces')
+      .select('settings')
+      .eq('id', this.workspaceId)
+      .single()
+
+    if (error || !workspace) {
+      return {
+        id: 'claude',
+        name: 'Claude 官方模型',
+        type: 'claude'
+      }
+    }
+
+    const selectedConfig = workspace.settings as any
     
-    if (!selectedConfig || selectedConfig.type === 'claude') {
+    if (!selectedConfig?.selectedModel || selectedConfig.selectedModel.type === 'claude') {
       return {
         id: 'claude',
         name: 'Claude 官方模型',
@@ -50,8 +69,14 @@ export class ModelService {
     }
     
     // 路由配置模式
-    if (selectedConfig.type === 'route' && selectedConfig.routeId) {
-      const routeConfig = await this.routeConfigRepo.getRouteConfig(selectedConfig.routeId)
+    if (selectedConfig.selectedModel.type === 'route' && selectedConfig.selectedModel.routeId) {
+      const { data: routeConfig } = await this.supabase
+        .from('route_configs')
+        .select('*')
+        .eq('id', selectedConfig.selectedModel.routeId)
+        .eq('workspace_id', this.workspaceId)
+        .single()
+
       if (routeConfig) {
         return {
           id: routeConfig.id,
@@ -75,7 +100,25 @@ export class ModelService {
     if (type === 'claude') {
       // 选择 Claude 官方模型
       const selectedConfig = { type: 'claude' as const }
-      await this.routeConfigRepo.setSelectedConfig(selectedConfig)
+      
+      // 更新工作空间设置
+      const { data: workspace } = await this.supabase
+        .from('workspaces')
+        .select('settings')
+        .eq('id', this.workspaceId)
+        .single()
+
+      const currentSettings = (workspace?.settings as any) || {}
+      
+      await this.supabase
+        .from('workspaces')
+        .update({
+          settings: {
+            ...currentSettings,
+            selectedModel: selectedConfig
+          }
+        })
+        .eq('id', this.workspaceId)
       
       return {
         id: 'claude',
@@ -90,14 +133,38 @@ export class ModelService {
       }
       
       // 验证路由配置是否存在
-      const routeConfig = await this.routeConfigRepo.getRouteConfig(routeId)
-      if (!routeConfig) {
+      const { data: routeConfig, error } = await this.supabase
+        .from('route_configs')
+        .select('*')
+        .eq('id', routeId)
+        .eq('workspace_id', this.workspaceId)
+        .single()
+
+      if (error || !routeConfig) {
         throw new HTTPException(400, { message: '路由配置不存在' })
       }
       
       // 保存选择的配置
       const selectedConfig = { type: 'route' as const, routeId }
-      await this.routeConfigRepo.setSelectedConfig(selectedConfig)
+      
+      // 更新工作空间设置
+      const { data: workspace } = await this.supabase
+        .from('workspaces')
+        .select('settings')
+        .eq('id', this.workspaceId)
+        .single()
+
+      const currentSettings = (workspace?.settings as any) || {}
+      
+      await this.supabase
+        .from('workspaces')
+        .update({
+          settings: {
+            ...currentSettings,
+            selectedModel: selectedConfig
+          }
+        })
+        .eq('id', this.workspaceId)
       
       return {
         id: routeConfig.id,

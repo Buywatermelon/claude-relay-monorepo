@@ -3,17 +3,17 @@
  * 处理 API Key 池的所有管理操作
  */
 
-import { KeyPoolManager } from '../key-pool/key-pool-manager'
-import { ModelProvider } from '../../../../../shared/types/admin/providers'
 import { ApiKeyStatus, KeyPoolStats } from '../../../../../shared/types/key-pool'
-import { ADMIN_STORAGE_KEYS } from '../../../../../shared/constants/admin/storage'
 import { ValidationError } from '../../utils/errors'
+import { getSupabaseAdmin } from '../../lib/supabase'
+import { ProviderService } from './providers'
 
 export class KeyPoolService {
-  private keyPoolManager: KeyPoolManager
+  private supabase = getSupabaseAdmin()
+  private providerService: ProviderService
 
-  constructor(private kv: KVNamespace) {
-    this.keyPoolManager = new KeyPoolManager(kv)
+  constructor(private workspaceId: string) {
+    this.providerService = new ProviderService(workspaceId)
   }
 
   /**
@@ -23,7 +23,7 @@ export class KeyPoolService {
     console.log(`[KeyPoolService] Getting key pool status for provider: ${providerId}`)
     
     // 获取供应商信息
-    const provider = await this.getProvider(providerId)
+    const provider = await this.providerService.getProviderById(providerId)
     console.log(`[KeyPoolService] Provider found:`, provider ? provider.name : 'NOT FOUND')
     
     if (!provider) {
@@ -31,176 +31,257 @@ export class KeyPoolService {
       throw new ValidationError('供应商不存在')
     }
 
-    // 获取或创建 Key Pool
-    console.log(`[KeyPoolService] Getting or creating key pool for ${providerId} (type: ${provider.type})`)
-    const pool = await this.keyPoolManager.getOrCreatePool(providerId, provider.type)
-    
-    // 获取所有密钥和统计信息
-    console.log(`[KeyPoolService] Loading keys and stats...`)
-    const keys = await pool.getKeys()
-    const stats = await pool.getStats()
-    
-    console.log(`[KeyPoolService] Keys count: ${keys.length}, Stats:`, stats)
+    // 获取所有密钥
+    const { data: keys, error } = await this.supabase
+      .from('provider_api_keys')
+      .select('*')
+      .eq('provider_id', providerId)
+      .eq('workspace_id', this.workspaceId)
+      .order('created_at', { ascending: false })
 
+    if (error) {
+      console.error(`[KeyPoolService] Error loading keys:`, error)
+      throw new Error('获取密钥列表失败')
+    }
+
+    console.log(`[KeyPoolService] Keys count: ${keys?.length || 0}`)
+
+    // 计算统计信息
+    const stats = this.calculateStats(keys || [])
+    
     return {
       providerId,
       providerName: provider.name,
-      keys,
+      keys: (keys || []).map(key => ({
+        id: key.id,
+        key: key.key_hint || '******',
+        status: key.status as ApiKeyStatus,
+        usage: {
+          count: key.usage_count || 0,
+          lastUsedAt: key.last_used_at
+        },
+        lastError: key.last_error,
+        addedAt: key.created_at || new Date().toISOString()
+      })),
       stats,
-      hasKeys: keys.length > 0
+      hasKeys: (keys?.length || 0) > 0
     }
   }
 
   /**
-   * 添加新的 API Key
+   * 添加单个密钥
    */
-  async addKey(providerId: string, key: string, status?: ApiKeyStatus) {
-    const provider = await this.getProvider(providerId)
+  async addKey(providerId: string, key: string, userId: string) {
+    // 验证供应商
+    const provider = await this.providerService.getProviderById(providerId)
     if (!provider) {
       throw new ValidationError('供应商不存在')
     }
 
-    const pool = await this.keyPoolManager.getOrCreatePool(providerId, provider.type)
-    return await pool.addKey(key, status)
+    // 创建密钥提示（显示最后4个字符）
+    const keyHint = `${key.slice(0, 4)}...${key.slice(-4)}`
+
+    // 添加密钥
+    const { data, error } = await this.supabase
+      .from('provider_api_keys')
+      .insert({
+        workspace_id: this.workspaceId,
+        provider_id: providerId,
+        encrypted_key: key, // TODO: 实际应该加密存储
+        key_hint: keyHint,
+        status: 'active',
+        created_by: userId
+      })
+      .select()
+      .single()
+
+    if (error) {
+      throw new Error('添加密钥失败')
+    }
+
+    // 记录审计日志
+    await this.supabase.from('audit_logs').insert({
+      workspace_id: this.workspaceId,
+      user_id: userId,
+      action: 'api_key.added',
+      resource_type: 'api_key',
+      resource_id: data.id,
+      details: { provider_id: providerId }
+    })
+
+    return {
+      id: data.id,
+      key: keyHint,
+      status: data.status as ApiKeyStatus,
+      usage: {
+        count: 0,
+        lastUsedAt: null
+      },
+      lastError: null,
+      addedAt: data.created_at
+    }
   }
 
   /**
-   * 更新 Key 状态
+   * 批量添加密钥
    */
-  async updateKeyStatus(providerId: string, keyId: string, status?: ApiKeyStatus, errorMessage?: string) {
-    const provider = await this.getProvider(providerId)
+  async batchAddKeys(providerId: string, keys: string[], userId: string) {
+    // 验证供应商
+    const provider = await this.providerService.getProviderById(providerId)
     if (!provider) {
       throw new ValidationError('供应商不存在')
     }
 
-    const pool = await this.keyPoolManager.getOrCreatePool(providerId, provider.type)
-    
-    if (status) {
-      await pool.updateKeyStatus(keyId, status, errorMessage)
+    // 准备批量插入数据
+    const keysToInsert = keys.map(key => ({
+      workspace_id: this.workspaceId,
+      provider_id: providerId,
+      encrypted_key: key, // TODO: 实际应该加密存储
+      key_hint: `${key.slice(0, 4)}...${key.slice(-4)}`,
+      status: 'active',
+      created_by: userId
+    }))
+
+    // 批量插入
+    const { data, error } = await this.supabase
+      .from('provider_api_keys')
+      .insert(keysToInsert)
+      .select()
+
+    if (error) {
+      throw new Error('批量添加密钥失败')
+    }
+
+    // 记录审计日志
+    await this.supabase.from('audit_logs').insert({
+      workspace_id: this.workspaceId,
+      user_id: userId,
+      action: 'api_keys.batch_added',
+      resource_type: 'api_key',
+      details: { 
+        provider_id: providerId, 
+        count: keys.length 
+      }
+    })
+
+    return {
+      added: data.length,
+      failed: 0,
+      errors: []
     }
   }
 
   /**
-   * 删除 API Key
+   * 批量操作密钥
    */
-  async removeKey(providerId: string, keyId: string) {
-    const provider = await this.getProvider(providerId)
+  async batchOperation(
+    providerId: string, 
+    keyIds: string[], 
+    operation: 'enable' | 'disable' | 'delete',
+    userId: string
+  ) {
+    // 验证供应商
+    const provider = await this.providerService.getProviderById(providerId)
     if (!provider) {
       throw new ValidationError('供应商不存在')
     }
 
-    const pool = await this.keyPoolManager.getOrCreatePool(providerId, provider.type)
-    await pool.removeKey(keyId)
+    if (operation === 'delete') {
+      // 删除操作
+      const { error } = await this.supabase
+        .from('provider_api_keys')
+        .delete()
+        .in('id', keyIds)
+        .eq('provider_id', providerId)
+        .eq('workspace_id', this.workspaceId)
+
+      if (error) {
+        throw new Error('批量删除失败')
+      }
+
+      // 记录审计日志
+      await this.supabase.from('audit_logs').insert({
+        workspace_id: this.workspaceId,
+        user_id: userId,
+        action: 'api_keys.batch_deleted',
+        resource_type: 'api_key',
+        details: { 
+          provider_id: providerId, 
+          key_ids: keyIds 
+        }
+      })
+
+      return { affected: keyIds.length }
+    }
+
+    // 启用/禁用操作
+    const newStatus = operation === 'enable' ? 'active' : 'inactive'
+    const { error } = await this.supabase
+      .from('provider_api_keys')
+      .update({ status: newStatus })
+      .in('id', keyIds)
+      .eq('provider_id', providerId)
+      .eq('workspace_id', this.workspaceId)
+
+    if (error) {
+      throw new Error(`批量${operation === 'enable' ? '启用' : '禁用'}失败`)
+    }
+
+    // 记录审计日志
+    await this.supabase.from('audit_logs').insert({
+      workspace_id: this.workspaceId,
+      user_id: userId,
+      action: `api_keys.batch_${operation}d`,
+      resource_type: 'api_key',
+      details: { 
+        provider_id: providerId, 
+        key_ids: keyIds 
+      }
+    })
+
+    return { affected: keyIds.length }
   }
 
   /**
-   * 批量添加 API Keys
+   * 计算统计信息
    */
-  async batchAddKeys(providerId: string, keys: string[]) {
-    const provider = await this.getProvider(providerId)
-    if (!provider) {
-      throw new ValidationError('供应商不存在')
+  private calculateStats(keys: any[]): KeyPoolStats {
+    const stats: KeyPoolStats = {
+      total: keys.length,
+      active: 0,
+      inactive: 0,
+      expired: 0,
+      rateLimited: 0
     }
 
-    if (!keys || keys.length === 0) {
-      throw new ValidationError('请提供至少一个 API Key')
-    }
-
-    const pool = await this.keyPoolManager.getOrCreatePool(providerId, provider.type)
-    return await pool.addKeys(keys)
-  }
-
-  /**
-   * 批量操作
-   */
-  async batchOperation(providerId: string, keyIds: string[], operation: 'enable' | 'disable' | 'delete') {
-    const provider = await this.getProvider(providerId)
-    if (!provider) {
-      throw new ValidationError('供应商不存在')
-    }
-
-    const pool = await this.keyPoolManager.getOrCreatePool(providerId, provider.type)
-
-    for (const keyId of keyIds) {
-      switch (operation) {
-        case 'enable':
-          await pool.updateKeyStatus(keyId, 'active')
+    keys.forEach(key => {
+      switch (key.status) {
+        case 'active':
+          stats.active++
           break
-        case 'disable':
-          await pool.updateKeyStatus(keyId, 'disabled')
+        case 'inactive':
+          stats.inactive++
           break
-        case 'delete':
-          await pool.removeKey(keyId)
+        case 'expired':
+          stats.expired++
+          break
+        case 'rate_limited':
+          stats.rateLimited++
           break
       }
-    }
+    })
+
+    return stats
   }
+}
 
-  /**
-   * 获取统计信息
-   */
-  async getKeyPoolStats(providerId: string): Promise<KeyPoolStats> {
-    const provider = await this.getProvider(providerId)
-    if (!provider) {
-      throw new ValidationError('供应商不存在')
-    }
+// 兼容旧的 KeyPoolManager
+export class KeyPoolManager {
+  constructor(private workspaceId: string) {}
 
-    const pool = await this.keyPoolManager.getOrCreatePool(providerId, provider.type)
-    return await pool.getStats()
-  }
-
-  /**
-   * 执行维护任务
-   */
-  async performMaintenance(providerId: string) {
-    const provider = await this.getProvider(providerId)
-    if (!provider) {
-      throw new ValidationError('供应商不存在')
-    }
-
-    const pool = await this.keyPoolManager.getOrCreatePool(providerId, provider.type)
-    
-    // 重置过期的密钥
-    await pool.resetExhaustedKeys()
-    
-    // 清理错误的密钥（如果实现了）
-    if ('cleanupErrorKeys' in pool && typeof pool.cleanupErrorKeys === 'function') {
-      await pool.cleanupErrorKeys()
-    }
-  }
-
-  /**
-   * 获取供应商信息
-   */
-  private async getProvider(providerId: string): Promise<ModelProvider | null> {
-    console.log(`[KeyPoolService.getProvider] Looking for provider: ${providerId}`)
-    
-    const providersData = await this.kv.get(ADMIN_STORAGE_KEYS.MODEL_PROVIDERS)
-    
-    if (!providersData) {
-      console.log(`[KeyPoolService.getProvider] No providers found in KV`)
-      return null
-    }
-    
-    // 解析数据
-    let providers: ModelProvider[] = []
-    try {
-      const parsed = typeof providersData === 'string' ? JSON.parse(providersData) : providersData
-      providers = Array.isArray(parsed) ? parsed : []
-    } catch (error) {
-      console.error(`[KeyPoolService.getProvider] Failed to parse providers data:`, error)
-      return null
-    }
-    
-    console.log(`[KeyPoolService.getProvider] Found ${providers.length} providers in KV`)
-    
-    if (providers.length > 0) {
-      console.log(`[KeyPoolService.getProvider] Available provider IDs:`, providers.map(p => p.id))
-    }
-    
-    const provider = providers.find(p => p.id === providerId)
-    console.log(`[KeyPoolService.getProvider] Provider ${providerId} found:`, provider ? 'YES' : 'NO')
-    
-    return provider || null
+  async batchAddKeys(providerId: string, keys: string[]) {
+    const service = new KeyPoolService(this.workspaceId)
+    // 这里需要一个默认的 userId，实际使用时应该从上下文获取
+    return service.batchAddKeys(providerId, keys, 'system')
   }
 }
